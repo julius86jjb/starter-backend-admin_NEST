@@ -1,8 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { AuthService } from '../auth.service';
+import { Observable, of } from 'rxjs';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -15,14 +16,10 @@ export class AuthGuard implements CanActivate {
 
   }
 
-
-
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  async canActivate(context: ExecutionContext):  Promise<boolean> {
 
     const request = context.switchToHttp().getRequest();
-
     const token = this.extractTokenFromHeader(request);
-    // console.log({token});
 
     if (!token) {
       throw new UnauthorizedException('Token not found');
@@ -32,21 +29,33 @@ export class AuthGuard implements CanActivate {
     try {
 
       const payload = await this.jwtService.verifyAsync<JwtPayload>( token, { secret: process.env.JWT_SEED });
-      console.log(payload)
 
       const user = await this.authService.findUserById(payload.id);
-      if(!user) throw new UnauthorizedException('User does not exists');
-      if(!user.isActive) throw new UnauthorizedException('User does not exists');
 
+      if(!user.isActive) throw new ForbiddenException('User is not active'); 
+      
       request['user'] = user;
+      return true;
+    } 
+    catch(error){
+      switch(error.name){
 
-    } catch (error) {
-      throw new UnauthorizedException('Bad token');
+          case 'TokenExpiredError':{
+            throw new UnauthorizedException('Token expired');
+          }
+          case 'JsonWebTokenError': {
+            throw new UnauthorizedException('Not valid token');
+          }
+          case 'NotFoundException':{
+            throw new NotFoundException(error.message);  
+          }
+          default:{
+            throw new ForbiddenException(error.message); 
+          }   
+      }
     }
-    return true;
 
   }
-
 
   private extractTokenFromHeader(request: Request): string | undefined {
     const [type, token] = request.headers['authorization']?.split(' ') ?? [];
