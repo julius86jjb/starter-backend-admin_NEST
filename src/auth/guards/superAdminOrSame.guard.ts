@@ -17,9 +17,10 @@ export class SuperAdminOrSameGuard implements CanActivate {
         
         try {
             const user = request.user as User;
-            // console.log(request)
             
-            if ((!roles.includes(user.role)) && user._id.toString() !== request.params.id) throw new ForbiddenException('You need privileges to perform this action')
+            if ((!roles.includes(user.role)) && user._id.toString() !== request.params.id)  {
+                throw new ForbiddenException('You need privileges to perform this action')
+            }
             return true
         } catch (error) {
             throw new ForbiddenException(error.message);

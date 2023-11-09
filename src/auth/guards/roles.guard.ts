@@ -18,7 +18,9 @@ export class RolesGuard implements CanActivate {
 
     try {
       const user = request.user as User;
-      if (!roles.includes(user.role)) throw new ForbiddenException('You need privileges to perform this action')
+      if (!roles.includes(user.role)) {
+        throw new ForbiddenException('You need privileges to perform this action')
+      } 
       return true
     } catch (error) {
       throw new ForbiddenException(error.message);

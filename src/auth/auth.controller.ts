@@ -70,7 +70,7 @@ export class AuthController {
   @Roles(Role.admin, Role.super_admin)
   @Get('/usuarios')
   async findAll(@Res() res, @Request() req: Request, @Query() { page, limit }) {
-    // console.log(req);
+    // console.log(req['user']);
     // const user = req['user'];
     // return user;
     try {
@@ -170,7 +170,7 @@ export class AuthController {
     if (fs.existsSync(pathImg)) {
       return of(res.sendFile(pathImg));
     } else {
-      const pathImg = join(process.cwd(), 'uploads/users/default-user.png');
+      const pathImg = join(process.cwd(), 'uploads/users/default-user.jpg');
       return of(res.sendFile(pathImg));
     }
 
